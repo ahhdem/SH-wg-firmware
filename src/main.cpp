@@ -46,6 +46,11 @@
 #include "ydwg_raw_output.h"
 #include "ydwg_raw_parser.h"
 
+#ifdef SW_SAILORWIND
+#include "sailorwind/sw_app.h"
+#include "sailorwind/sw_n2k_tap.h"
+#endif
+
 using namespace sensesp;
 
 // Set the information for other bus devices, which messages we support
@@ -219,6 +224,13 @@ void InitNMEA2000() {
 
   nmea2000->ExtendTransmitMessages(kTransmitMessages);
   nmea2000->ExtendReceiveMessages(ReceiveMessages);
+
+#ifdef SW_SAILORWIND
+  // Advertise the environmental PGNs the sailorwind tap consumes. Wind/position/
+  // heading/variation/COG-SOG are already in ReceiveMessages above; this adds
+  // the atmospheric ones (130311–130316).
+  nmea2000->ExtendReceiveMessages(sailorwind::SwN2kTap::WantedPgns());
+#endif
 
   nmea2000->SetCANFrameHandler([](bool &has_frame, unsigned long &can_id,
                                   unsigned char &len, unsigned char *buf) {
@@ -637,6 +649,15 @@ void setup() {
       [](const tN2kMsg &n2k_msg) { SetSystemTime(n2k_msg); }));
 
   SetupConnections();
+
+#ifdef SW_SAILORWIND
+  // Additive sailorwind submitter: start the provision/submit task and tap the
+  // decoded N2K stream into the aggregator from the main-loop consumer. The
+  // gateway's NMEA0183/SignalK/YDWG paths above are untouched.
+  sailorwind::SailorwindBegin();
+  n2k_msg_input.connect_to(new LambdaConsumer<tN2kMsg>(
+      [](const tN2kMsg &msg) { sailorwind::FeedN2k(msg); }));
+#endif
 
   app.onRepeat(1000, []() {
     debugD("Uptime: %lu, CAN RX: %d CAN TX: %d", millis() / 1000,
