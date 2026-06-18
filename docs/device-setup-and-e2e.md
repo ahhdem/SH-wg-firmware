@@ -42,7 +42,8 @@ What this skips: no per-device account linking — the token *is* the link
 
 ### Flow B — Self-register + claim (the target, plug-n-play)
 
-Zero typing of secrets. This is the shipping UX, **not built yet** (see status).
+Zero typing of secrets. This is the shipping UX. **Server side built** (2026-06-18);
+the firmware provisioning client + module wiring is the remaining half.
 
 1. **Flash + power** the device. On first boot it generates a secret and
    **self-registers** with sailorwind.net, getting a provisional token; it
@@ -100,12 +101,14 @@ has no 126992, and TLS needs a valid clock). No valid clock → device holds off
 - ✅ `auto_swgw` source accepted by `POST /v1/observations` (shipped to main).
 - ✅ Manual device-token mint (`POST /v1/me/tokens`) + device-token auth — the
   Flow A path. Already in production (SignalK plugin uses it).
-- ⛔ **Self-register/claim/check-in endpoints not built** (`/v1/devices/register`,
-  `/v1/devices/claim`, `/v1/devices/me`). Only `0031_devices.sql` + the `devices`
-  Drizzle schema are drafted (🟡 uncommitted on `gateway-device-registration`).
-- ⛔ `session.ts` userless-device change, `observations.ts` unclaimed-precise
-  gate, rate-limit policies — not built.
-- ⛔ Firmware-update manifest endpoint — not built.
+- ✅ **Self-register/claim/check-in endpoints BUILT** (2026-06-18):
+  `POST /v1/devices/register`, `POST /v1/devices/claim`, `GET /v1/devices/me`
+  (`apps/api/src/routes/devices.ts`). 12 integration tests pass; full API suite
+  (133) green. Contract: sailorwind `docs/device-registration-api.md`.
+- ✅ `session.ts` userless-device context, `observations.ts` unclaimed→coarse +
+  device-keyed rate-limit + `device_id` attribution + Turnstile exemption,
+  `rate-limit.ts` policies (`deviceRegister`/`deviceClaim`/`unclaimedDevice`).
+- ⛔ Firmware-update manifest endpoint — not built (not needed for first release).
 
 ### So: is the API done / are we ready to e2e test?
 - **All API work done?** No. The `auto_swgw` + manual-token path is shipped;
