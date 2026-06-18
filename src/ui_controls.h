@@ -131,6 +131,13 @@ class StringConfig : public Configurable {
 
   String get_value() { return value_; }
 
+  // Set the value programmatically and persist it (e.g. a device token obtained
+  // at self-registration, so it survives reboots and shows in the config UI).
+  void set_value(const String& v) {
+    value_ = v;
+    save_configuration();
+  }
+
  protected:
   String value_;
   String title_ = "Value";
