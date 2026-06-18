@@ -32,8 +32,12 @@ SwN2kTap* g_tap = nullptr;
 SwProvisioner* g_prov = nullptr;
 SemaphoreHandle_t g_agg_mtx = nullptr;
 
-constexpr uint32_t kFlushIntervalMs = 10 * 60 * 1000;    // 10-min observation window
-constexpr uint32_t kCheckInIntervalMs = 15 * 60 * 1000;  // claim-state / settings poll
+constexpr uint32_t kFlushIntervalMs = 10 * 60 * 1000;     // 10-min observation window
+// Check-in (claim state + settings) poll. Fast while UNCLAIMED so a fresh claim
+// shows on the device within ~20 s; slow once claimed (it's just a settings poll
+// then). See SailorwindTask.
+constexpr uint32_t kCheckInUnclaimedMs = 20 * 1000;       // 20 s
+constexpr uint32_t kCheckInClaimedMs = 15 * 60 * 1000;    // 15 min
 constexpr TickType_t kTaskTick = pdMS_TO_TICKS(1000);
 
 // UTC epoch milliseconds, or 0 when the clock isn't trustworthy yet. The system
@@ -127,7 +131,10 @@ void SailorwindTask(void*) {
     }
 
     const uint32_t now = millis();
-    if (now - last_checkin_ms >= kCheckInIntervalMs) {
+    const uint32_t checkin_interval =
+        (g_prov->claimState() == ClaimState::Claimed) ? kCheckInClaimedMs
+                                                      : kCheckInUnclaimedMs;
+    if (now - last_checkin_ms >= checkin_interval) {
       g_prov->CheckIn();
       last_checkin_ms = now;
     }
