@@ -12,7 +12,10 @@ static StringConfig* MakeString(const char* path, const char* desc,
 }
 
 void SwConfig::Begin() {
-  enable_ = new CheckboxConfig(false, "Enable sailorwind submission",
+  // Default ON: this is the sailorwind-first firmware (gateway second), so a
+  // freshly-flashed unit self-registers and starts submitting as soon as it has
+  // WiFi + a clock — no toggle hunt. Users who want gateway-only can untick it.
+  enable_ = new CheckboxConfig(true, "Enable sailorwind submission",
                                "/sailorwind/enable",
                                "Read N2K weather and submit it to sailorwind.net",
                                300);
