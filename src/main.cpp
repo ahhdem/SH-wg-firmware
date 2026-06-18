@@ -515,8 +515,17 @@ void PrintProductInfo() {
 }
 
 void SetupUIComponents() {
+#ifdef SW_SAILORWIND
+  // Sailorwind-first firmware: do NOT pull Hat Labs OTA by default. It would
+  // overwrite our firmware, and its boot-time TLS handshake competes for the
+  // heap our submitter needs (seen as mbedtls -32512 alloc failures). Our own
+  // update channel (sw_selfupdate) replaces it later. Re-enablable in System.
+  const bool fw_updates_default = false;
+#else
+  const bool fw_updates_default = true;
+#endif
   checkbox_config_enable_firmware_updates = new CheckboxConfig(
-      true, "Enable", "/System/Enable Firmware Updates",
+      fw_updates_default, "Enable", "/System/Enable Firmware Updates",
       "If enabled, the device will periodically check online and "
       "install any available firmware updates.",
       1100);
