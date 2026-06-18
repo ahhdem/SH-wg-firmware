@@ -114,8 +114,10 @@ bool SwProvisioner::Register() {
   String body;
   serializeJson(req, body);
 
+  Serial.printf("[sailorwind] register POST %s\n", url.c_str());
   const int code = https.POST(body);
   if (code != 201) {
+    Serial.printf("[sailorwind] register FAILED (HTTP %d) - will retry\n", code);
     https.end();
     return false;  // 409 (secret mismatch) / 429 / network — caller retries
   }
@@ -123,7 +125,10 @@ bool SwProvisioner::Register() {
   https.end();
 
   StaticJsonDocument<768> rd;
-  if (deserializeJson(rd, resp)) return false;
+  if (deserializeJson(rd, resp)) {
+    Serial.println("[sailorwind] register response parse error");
+    return false;
+  }
 
   const String device_id = rd["deviceId"] | "";
   const String token = rd["token"] | "";
@@ -133,6 +138,12 @@ bool SwProvisioner::Register() {
   claim_code_ = rd["claimCode"] | "";
   claim_state_ = (rd["claimed"] | false) ? ClaimState::Claimed
                                          : ClaimState::Unclaimed;
+  const String claim_url = rd["claimUrl"] | "";
+  Serial.println("[sailorwind] ======== REGISTERED ========");
+  Serial.printf("[sailorwind]   deviceId : %s\n", device_id_.c_str());
+  Serial.printf("[sailorwind]   CLAIM CODE: %s\n", claim_code_.c_str());
+  Serial.printf("[sailorwind]   claim at : %s\n", claim_url.c_str());
+  Serial.println("[sailorwind] =============================");
 
   // Persist device_id (NVS) and token (SwConfig → SPIFFS, UI-visible).
   Preferences prefs;
@@ -170,6 +181,8 @@ void SwProvisioner::CheckIn() {
   claim_state_ = claimed ? ClaimState::Claimed : ClaimState::Unclaimed;
   // While unclaimed the server echoes a live code; once claimed it's null.
   claim_code_ = claimed ? String("") : (rd["claimCode"] | "");
+  Serial.printf("[sailorwind] check-in: claimed=%s code=%s\n",
+                claimed ? "yes" : "no", claim_code_.c_str());
 }
 
 }  // namespace sailorwind

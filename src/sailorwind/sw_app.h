@@ -14,6 +14,8 @@
 // task — never on the ReactESP main loop, which runs the 50 µs N2K pump. The
 // only cross-task state is the aggregator, guarded by a short-held mutex.
 
+#include <Arduino.h>  // String
+
 class tN2kMsg;  // defined by the NMEA2000 library
 
 namespace sailorwind {
@@ -26,5 +28,11 @@ void SailorwindBegin();
 // Route one decoded N2K message into the aggregator. Call from the main-loop
 // N2K consumer. Cheap + non-stalling (brief mutex); safe before/after claim.
 void FeedN2k(const tN2kMsg& msg);
+
+// Human-readable status + claim code for the SensESP web UI status page. Safe to
+// call any time (null-safe before SailorwindBegin runs). ClaimCodeForUi returns
+// the formatted code only while unclaimed, otherwise "".
+String ClaimStatusForUi();
+String ClaimCodeForUi();
 
 }  // namespace sailorwind

@@ -137,6 +137,18 @@ UILambdaOutput<int> ui_output_uptime(
 UILambdaOutput<int> ui_output_free_heap(
     "Free memory", []() { return ESP.getFreeHeap(); }, "Runtime", 410);
 
+#ifdef SW_SAILORWIND
+// Sailorwind status card on the web UI. After the user ticks "Enable sailorwind
+// submission" the device self-registers and these surface the claim code + the
+// next step (go to sailorwind.net/claim and enter the code). Sort first (group
+// order 50) so it's the top card.
+UILambdaOutput<String> ui_output_sw_status(
+    "Status", []() { return sailorwind::ClaimStatusForUi(); }, "Sailorwind", 50);
+UILambdaOutput<String> ui_output_sw_claim_code(
+    "Claim code (enter at sailorwind.net/claim)",
+    []() { return sailorwind::ClaimCodeForUi(); }, "Sailorwind", 60);
+#endif
+
 int led_state = -1;
 
 uint64_t GetBoardSerialNumber() {

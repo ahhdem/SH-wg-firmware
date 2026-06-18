@@ -155,6 +155,27 @@ void SailorwindBegin() {
   xTaskCreate(SailorwindTask, "SailorwindTask", 12288, nullptr, 1, nullptr);
 }
 
+String ClaimStatusForUi() {
+  if (!g_config.enabled())
+    return "Disabled - tick 'Enable sailorwind submission' below";
+  if (!WiFi.isConnected()) return "Waiting for WiFi...";
+  if (SwEpochMs() == 0) return "Waiting for clock (GPS time or SNTP)...";
+  if (!g_prov) return "Starting...";
+  switch (g_prov->claimState()) {
+    case ClaimState::Claimed:
+      return "Claimed - submitting as your account";
+    case ClaimState::Unclaimed:
+      return "Registered, UNCLAIMED - enter the claim code at sailorwind.net/claim";
+    default:
+      return "Registering...";
+  }
+}
+
+String ClaimCodeForUi() {
+  if (!g_prov || g_prov->claimState() != ClaimState::Unclaimed) return "";
+  return g_prov->claimCode();
+}
+
 void FeedN2k(const tN2kMsg& msg) {
   if (!g_tap || !g_agg_mtx) return;
   // Short timeout, NOT portMAX_DELAY: the task holds this lock only for a
