@@ -87,15 +87,20 @@ has no 126992, and TLS needs a valid clock). No valid clock → device holds off
 - ✅ Data plane compiles against the real toolchain: aggregator, wind-dir
   resolver, JSON builder, TLS submitter, N2K tap. Pure logic covered by a
   native host test.
-- ✅ Config UI nodes (`sw_config.cpp`) + full firmware builds green (~69.5% flash).
-- ⛔ **Module not wired into `main.cpp`** — there is no `sailorwind::init`, no
-  `-D SW_SAILORWIND` block. **Flashed today, the device does nothing sailorwind.**
-  This is the single gating item for any e2e test.
-- ⛔ SNTP fallback not added yet.
-- ⛔ `sw_provision.cpp` (self-register/claim/check-in) — interface only, no impl.
+- ✅ Config UI nodes (`sw_config.cpp`).
+- ✅ **Module WIRED + builds green with `-D SW_SAILORWIND`** (2026-06-18):
+  `sw_app.cpp` `SailorwindBegin()` + `FeedN2k()` tap, started from `main.cpp`;
+  a dedicated FreeRTOS task owns all blocking TLS so the N2K pump never stalls.
+  Flash 71.3%, RAM 24.7% static. Comment the flag out → stock gateway firmware.
+- ✅ SNTP fallback added (`configTime` in `SailorwindBegin`); clock gate holds
+  off timestamps + TLS until N2K 126992 or SNTP sets a real clock.
+- ✅ `sw_provision.cpp` (self-register + check-in) implemented: NVS-persisted
+  device secret + device_id, token via `SwConfig`, ISRG-Root-X1-pinned HTTPS.
 - ⛔ `sw_selfupdate.cpp` (OTA) — interface only; not needed for first release.
 - 🟡 Queue store is RAM-only (no persistence across reboot); LittleFS = follow-up.
-- ℹ️ SH-ESP32 test board needs `config.h` CAN pins → TX `GPIO_NUM_32`, RX `GPIO_NUM_34`.
+- ⚠️ **SH-ESP32 test board: before flashing, set `config.h` CAN pins → TX
+  `GPIO_NUM_32`, RX `GPIO_NUM_34`** (the committed values 26/25 are for the real
+  SH-wg). Do NOT commit that swap to the `sailorwind` branch.
 
 ### Server / API
 - ✅ `auto_swgw` source accepted by `POST /v1/observations` (shipped to main).
