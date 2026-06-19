@@ -34,8 +34,8 @@ SemaphoreHandle_t g_agg_mtx = nullptr;
 
 constexpr uint32_t kFlushIntervalMs = 10 * 60 * 1000;     // 10-min observation window
 // Check-in (claim state + settings) poll. Fast while UNCLAIMED so a fresh claim
-// shows on the device within ~20 s; slow once claimed (it's just a settings poll
-// then). See SailorwindTask.
+// shows within ~20 s; slow (15 min) once claimed — it's just a passive backstop
+// then, because an enable toggle forces an immediate re-sync (see SailorwindTask).
 constexpr uint32_t kCheckInUnclaimedMs = 20 * 1000;       // 20 s
 constexpr uint32_t kCheckInClaimedMs = 15 * 60 * 1000;    // 15 min
 constexpr TickType_t kTaskTick = pdMS_TO_TICKS(1000);
@@ -111,12 +111,20 @@ void DiscardWindow() {
 // Dedicated task: all blocking network I/O lives here, off the main loop.
 void SailorwindTask(void*) {
   bool registered = false;
+  bool prev_enabled = false;
   uint32_t last_flush_ms = 0;
   uint32_t last_checkin_ms = 0;
 
   for (;;) {
     vTaskDelay(kTaskTick);
-    if (!g_config.enabled()) continue;
+    const bool enabled = g_config.enabled();
+    // A deliberate enable toggle (off -> on) is the natural "re-sync now"
+    // gesture: force the next check-in so a claim/unclaim/settings change made
+    // in the web app reflects immediately, instead of waiting for the periodic
+    // poll. (Setting last_checkin_ms = 0 makes the interval check below fire.)
+    if (enabled && !prev_enabled) last_checkin_ms = 0;
+    prev_enabled = enabled;
+    if (!enabled) continue;
     // TLS needs a real clock + a network; wait for both.
     if (!WiFi.isConnected() || SwEpochMs() == 0) continue;
 
