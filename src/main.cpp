@@ -601,7 +601,16 @@ void setup() {
   WiFi.macAddress(mac);
   String mac_str = MacAddrToString(mac);
 
+  // Sailorwind-first firmware: advertise as "sailorwind" so first-time setup is
+  // just `sailorwind.local` in a browser (and the AP reads "Configure
+  // Sailorwind"). The stock gateway build keeps the upstream "sh-wg" identity.
+#ifdef SW_SAILORWIND
+  String hostname = "sailorwind";
+  const char* kApPrefix = "Configure Sailorwind ";
+#else
   String hostname = "sh-wg";
+  const char* kApPrefix = "Configure SH-wg ";
+#endif
 
   SensESPMinimalAppBuilder builder;
   sensesp_app = builder.set_hostname(hostname)->get_app();
@@ -615,7 +624,7 @@ void setup() {
                               SensESPBaseApp::get_hostname(),
                               kWiFiCaptivePortalPassword);
 
-  networking->set_wifi_manager_ap_ssid(String("Configure SH-wg ") + mac_str);
+  networking->set_wifi_manager_ap_ssid(String(kApPrefix) + mac_str);
 
   networking->connect_to(new LambdaConsumer<WiFiState>([](WiFiState state) {
     // turn of WiFi power saving when connected

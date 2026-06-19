@@ -45,12 +45,15 @@ What this skips: no per-device account linking — the token *is* the link
 Zero typing of secrets. This is the shipping UX. **Server side built** (2026-06-18);
 the firmware provisioning client + module wiring is the remaining half.
 
-1. **Flash + power** the device. On first boot it generates a secret and
-   **self-registers** with sailorwind.net, getting a provisional token; it
-   starts submitting immediately as an *unclaimed* device (data is still used).
-2. The device's config page shows a short **claim code** (e.g. `K7QP-2M9X`).
+1. **Flash + power** the device, join its **"Configure Sailorwind …"** WiFi AP,
+   and give it your boat/home WiFi. On first boot it generates a secret and
+   **self-registers** with sailorwind.net, getting a token; it starts submitting
+   immediately as an *unclaimed* device (data is still used).
+2. **Open `http://sailorwind.local`** (the device's hostname) on the same
+   network → the **Sailorwind** status card shows a short **claim code**
+   (e.g. `K7QP-2M9X`).
 3. **Claim it:** signed in at sailorwind.net/claim, enter the code (or follow
-   the link on the config page). The device is now bound to your account; its
+   the link on the card). The device is now bound to your account; its
    observations are attributed to you and your settings flow down.
 4. The device never needs a hand-pasted token.
 
