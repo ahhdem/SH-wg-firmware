@@ -147,6 +147,11 @@ UILambdaOutput<String> ui_output_sw_status(
 UILambdaOutput<String> ui_output_sw_claim_code(
     "Claim code (enter at sailorwind.net/claim)",
     []() { return sailorwind::ClaimCodeForUi(); }, "Sailorwind", 60);
+// Machine-readable status for the mobile app (read via GET /info →
+// Properties.swStatus.Value). Stable key + compact JSON; see MachineStatusJson.
+UILambdaOutput<String> ui_output_sw_machine_status(
+    "swStatus", []() { return sailorwind::MachineStatusJson(); }, "Sailorwind",
+    90);
 #endif
 
 int led_state = -1;

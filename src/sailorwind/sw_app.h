@@ -35,4 +35,13 @@ void FeedN2k(const tN2kMsg& msg);
 String ClaimStatusForUi();
 String ClaimCodeForUi();
 
+// Machine-readable provisioning status for the mobile app. Surfaced as the
+// "swStatus" UIOutput (read via the device's GET /info, Properties.swStatus.Value).
+// Compact JSON: { "state": <token>, "claimed": bool, "claimCode": str|null,
+// "deviceId": str|null }. state ∈ DISABLED | NO_WIFI | CONNECTING | REGISTERING
+// | REGISTERED_UNCLAIMED | CLAIMED. The app auto-claims when state is
+// REGISTERED_UNCLAIMED and a claimCode is present (proof the device reached the
+// internet); otherwise it can warn/offer to provision.
+String MachineStatusJson();
+
 }  // namespace sailorwind

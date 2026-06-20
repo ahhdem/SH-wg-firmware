@@ -191,6 +191,58 @@ String ClaimCodeForUi() {
   return g_prov->claimCode();
 }
 
+// Stable state tokens for the app's provisioning logic (NOT user-facing prose;
+// ClaimStatusForUi() carries the human copy). Order mirrors the lifecycle.
+static const char* LifecycleStateToken() {
+  if (!g_config.enabled()) return "DISABLED";
+  if (!WiFi.isConnected()) return "NO_WIFI";
+  if (SwEpochMs() == 0) return "CONNECTING";
+  if (!g_prov) return "REGISTERING";
+  switch (g_prov->claimState()) {
+    case ClaimState::Claimed:
+      return "CLAIMED";
+    case ClaimState::Unclaimed:
+      return "REGISTERED_UNCLAIMED";
+    default:
+      return "REGISTERING";
+  }
+}
+
+String MachineStatusJson() {
+  const bool claimed = g_prov && g_prov->claimState() == ClaimState::Claimed;
+  const String code =
+      (g_prov && g_prov->claimState() == ClaimState::Unclaimed)
+          ? g_prov->claimCode()
+          : String("");
+  const String deviceId = g_prov ? g_prov->deviceId() : String("");
+
+  // Values are controlled (state tokens, XXXX-XXXX claim code, UUID deviceId) —
+  // no characters that need JSON escaping — so build the object by hand and keep
+  // ArduinoJson out of this translation unit.
+  String j = "{\"state\":\"";
+  j += LifecycleStateToken();
+  j += "\",\"claimed\":";
+  j += claimed ? "true" : "false";
+  j += ",\"claimCode\":";
+  if (code.length()) {
+    j += "\"";
+    j += code;
+    j += "\"";
+  } else {
+    j += "null";
+  }
+  j += ",\"deviceId\":";
+  if (deviceId.length()) {
+    j += "\"";
+    j += deviceId;
+    j += "\"";
+  } else {
+    j += "null";
+  }
+  j += "}";
+  return j;
+}
+
 void FeedN2k(const tN2kMsg& msg) {
   if (!g_tap || !g_agg_mtx) return;
   // Short timeout, NOT portMAX_DELAY: the task holds this lock only for a

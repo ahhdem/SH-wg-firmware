@@ -88,10 +88,13 @@ bool SwProvisioner::GenerateSecretIfMissing() {
 }
 
 bool SwProvisioner::EnsureRegistered() {
-  // Already have a token + device id → registered. (Recovery after an NVS wipe
-  // is handled server-side: same hardwareId + secret re-registers idempotently;
-  // we only reach Register() when we have no token.)
-  if (config_ && config_->hasToken() && device_id_.length() > 0) return true;
+  // Any token present → already provisioned; don't self-register (which would
+  // mint a new token and clobber the existing one). This covers BOTH the
+  // self-registered case (token + device_id) AND an app-pushed token (token,
+  // no device_id) — the app-mediated provisioning path must not be overwritten.
+  // Recovery after an NVS wipe is handled server-side: same hardwareId + secret
+  // re-registers idempotently; we only reach Register() with no token at all.
+  if (config_ && config_->hasToken()) return true;
   return Register();
 }
 

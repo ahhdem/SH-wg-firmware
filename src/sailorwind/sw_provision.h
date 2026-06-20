@@ -55,6 +55,9 @@ class SwProvisioner {
   ClaimState claimState() const { return claim_state_; }
   // Shown on the config UI while unclaimed so the user can claim at /claim?code=.
   const String& claimCode() const { return claim_code_; }
+  // Server-assigned device UUID (empty until registered). Surfaced in the
+  // machine-readable status the app reads to auto-claim.
+  const String& deviceId() const { return device_id_; }
 
  private:
   bool Register();   // POST /v1/devices/register
